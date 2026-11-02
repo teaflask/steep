@@ -105,24 +105,32 @@ Steep's opt-out lives only in this browser's storage. It doesn't follow the pers
 ## What Steep captures
 
 - **Page views and navigations**, including single-page app route changes: the scrubbed page address, the title, and only the origin of the referring site.
-- **Clicks**: what was clicked, described by its role, accessible name, tag, test id, link path and nearby landmarks. Never its other attributes or its full text.
-- **Field changes**: a field's value when it is committed (on change, blur or submit), never per keystroke. List and checkbox choices are kept as choices.
+- **Clicks**: what was clicked, by its role, name and test id. Never its other attributes or its full text.
+- **Field changes**: a field's value when it is committed, never per keystroke. List and checkbox choices are kept as choices.
 - **Form submits**: which form, and which button submitted it.
-- **Network calls** made with `fetch` or `XMLHttpRequest`, as metadata only: method, origin, path, query parameter names, status, timing, the click or input that set the call off, and a GraphQL operation name. Never headers, bodies or parameter values.
-- **Page outlines**, when the key's Page outlines setting is on: a text outline of what the page shows (headings, controls, labels and visible text), with field contents put through the same redaction.
-- **Attention**: whether the page is visible, focused, or idle (a minute with no input).
+- **Network calls** made with `fetch` or `XMLHttpRequest`: method, origin, path, query parameter names, status, timing, the click or input that started the call, and GraphQL operation names.
+- **Page outlines**: a text outline of what the page shows, with field contents put through the same redaction.
+- **Attention**: whether the page is visible, focused, or idle.
 - **Custom events** you add with `emit(name, properties)`: flat properties up to 4 KiB, with secrets scrubbed.
 
 Only real input counts. Events your own scripts dispatch aren't captured.
+
+Settings on each key in the dashboard decide part of what is kept:
+
+- **Page outlines** turns outlines on or off.
+- **Typed values** decides whether field text is kept, or only its length.
+- **Ids in addresses** keeps ids in page, link and request addresses. Reset, invite, sign-in and share links are always masked.
+- **Query values in requests**, **Request bodies** and **Response bodies** keep those parts of network calls, as redacted text.
 
 ### What Steep never captures
 
 - Screenshots, video, or a copy of your page's HTML or styles.
 - The contents of passwords, card numbers, one-time codes, or any field whose type, `autocomplete`, name or label says it holds something sensitive. Steep notes only that the field changed.
-- Secrets such as API keys and tokens, wherever they appear in captured text. They are replaced with a `[redacted]` marker.
+- Secrets such as API keys and tokens, and passwords, card numbers and one-time codes, wherever they appear in captured text, request and response bodies included. They are replaced with a `[redacted]` marker.
 - Credentials, tracking parameters (`utm_*`, `gclid`, `fbclid` and similar) and secret-looking query values in addresses.
-- With the key's Typed values setting off: field text (only its length is kept), query values in page addresses, and typed text that resurfaces in a title or address.
-- Anything inside an ignored region, or inside the Teaflask assistant on the same page.
+- Request or response headers, and cookies.
+- With the key's Typed values setting off: field text (only its length is kept), query values in page and request addresses, request bodies, and typed text that resurfaces in a title or address.
+- Anything inside an ignored region, or inside the Teaflask assistant on the same page, and the bodies of the assistant's own requests.
 
 ## Keep part of a page out
 
@@ -132,7 +140,7 @@ Add `data-teaflask-ignore` to an element to keep it and everything inside it out
 <div data-teaflask-ignore>…</div>
 ```
 
-Clicks, field changes and form submits inside it are skipped, with only a count kept that something was skipped. This reaches into open shadow roots below it. A click on an element that contains an ignored region is skipped too, since its name could repeat what's inside. Network calls your code makes from there are still captured, as metadata only. You can also add CSS selectors as ignored regions on the key in the dashboard; if a browser can't parse one, Steep turns typed values off on that page.
+Clicks, field changes and form submits inside it are skipped, with only a count kept that something was skipped. This reaches into open shadow roots below it. A click on an element that contains an ignored region is skipped too, since its name could repeat what's inside. Network calls your code makes from there are captured like any other call, bodies included when the key's settings allow. You can also add CSS selectors as ignored regions on the key in the dashboard; if a browser can't parse one, Steep turns typed values off on that page.
 
 ## Browser storage
 
@@ -159,8 +167,7 @@ connect-src https://api.teaflask.com
 - Network calls that start before Steep is capturing aren't captured: with the `async` script tag, calls made before it loads, and with either install, calls made before Steep has your key's settings.
 - `navigator.sendBeacon`, WebSockets and Server-Sent Events aren't captured.
 - Content inside iframes isn't captured.
-- Shadow DOM: open shadow roots are covered for clicks and field changes, but a form submitted inside a shadow root isn't captured as a form submit (its fields are still captured when they lose focus). A closed shadow root is seen only as its host element.
-- A GraphQL operation name is read from the request body by its first match, so an `operationName` nested in variables, or in a batched request beyond the first operation, can be attributed wrongly.
+- Shadow DOM: open shadow roots are covered for clicks and field changes, but a form submitted inside a shadow root isn't captured as a form submit (its fields are captured when they lose focus). A closed shadow root is seen only as its host element.
 - Steep's `fetch` wrapper returns a mirror of your promise that settles exactly as yours does, so an unhandled rejection behaves as it would without Steep.
 
 ## Versions

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2 (2026-11-02)
+
+### Other
+
+- Fixes and improvements.
+- README updates.
+
+Documentation: https://docs.teaflask.com/steep
+
+
 ## 0.1.1 (2026-11-01)
 
 ### Other
